@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- [REMOVE BEFORE FINAL PRESENTATION]: Change [PROJECT_TITLE] to match your exam topic -->
+  <title>Login & Signup - [PROJECT_TITLE]</title>
+
+  <!-- Bootstrap 5 CDN (Works when internet is ON) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Built-in Offline CSS Fallback (Works even with 0% Internet) -->
+  <style>
+    * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f172a, #1e3a8a); padding: 20px; }
+    .auth-card { background: #ffffff; width: 100%; max-width: 420px; border-radius: 12px; padding: 30px; box-shadow: 0 10px 25px rgba(0,0,0,0.25); }
+    .auth-tabs { display: flex; margin-bottom: 24px; border-bottom: 2px solid #e2e8f0; }
+    .auth-tab { flex: 1; text-align: center; padding: 10px; font-weight: 700; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; }
+    .auth-tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+    .form-label { font-weight: 600; font-size: 0.9rem; color: #334155; display: block; margin-bottom: 4px; }
+    .form-control, .form-select { width: 100%; padding: 10px; margin-bottom: 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; }
+    .btn-submit { width: 100%; padding: 11px; background: #2563eb; color: white; border: none; border-radius: 6px; font-weight: 600; font-size: 1rem; cursor: pointer; }
+    .btn-submit:hover { background: #1d4ed8; }
+    .msg-box { padding: 10px; border-radius: 6px; margin-bottom: 15px; font-size: 0.9rem; display: none; text-align: center; }
+    .msg-error { background: #fee2e2; color: #b91c1c; border: 1px solid #f87171; }
+    .msg-success { background: #dcfce7; color: #15803d; border: 1px solid #4ade80; }
+  </style>
+</head>
+<body>
+
+  <div class="auth-card">
+    <!-- [REMOVE BEFORE FINAL PRESENTATION]: Replace [BRAND_LOGO] with your portal title -->
+    <h3 style="text-align: center; margin-top: 0; color: #0f172a;">[BRAND_LOGO] Portal</h3>
+
+    <!-- Tab Switcher: Login vs Sign Up -->
+    <div class="auth-tabs">
+      <div id="loginTab" class="auth-tab active" onclick="switchTab('login')">LOGIN</div>
+      <div id="signupTab" class="auth-tab" onclick="switchTab('signup')">SIGN UP</div>
+    </div>
+
+    <!-- Alert Message Box for Errors / Success -->
+    <div id="alertBox" class="msg-box"></div>
+
+    <!-- =================================================================
+         1. LOGIN FORM
+         ================================================================= -->
+    <form id="loginForm" onsubmit="handleLogin(event)">
+      <label class="form-label">Email Address</label>
+      <input type="email" id="loginEmail" class="form-control" placeholder="Enter your email" required>
+
+      <label class="form-label">Password</label>
+      <input type="password" id="loginPassword" class="form-control" placeholder="Enter your password" required>
+
+      <button type="submit" class="btn-submit">Login to Dashboard</button>
+    </form>
+
+    <!-- =================================================================
+         2. SIGN UP FORM (Hidden by default until user clicks SIGN UP tab)
+         ================================================================= -->
+    <form id="signupForm" style="display: none;" onsubmit="handleSignup(event)">
+      <label class="form-label">Full Name</label>
+      <input type="text" id="signupName" class="form-control" placeholder="Enter full name" required>
+
+      <label class="form-label">Email Address</label>
+      <input type="email" id="signupEmail" class="form-control" placeholder="Enter email address" required>
+
+      <label class="form-label">Create Password</label>
+      <input type="password" id="signupPassword" class="form-control" placeholder="Minimum 4 characters" required>
+
+      <!-- [REMOVE BEFORE FINAL PRESENTATION]: Role selection covers Role-Based Access Control (RBAC) -->
+      <label class="form-label">Select Role</label>
+      <select id="signupRole" class="form-select">
+        <option value="User">Standard User / Student</option>
+        <option value="Admin">Admin / Manager</option>
+      </select>
+
+      <button type="submit" class="btn-submit">Create Account</button>
+    </form>
+  </div>
+
+  <!-- ===================================================================
+       BROWSER JAVASCRIPT (Tab Switching + Fetch Calls to Node.js Server)
+       =================================================================== -->
+  <script>
+    // [REMOVE BEFORE FINAL PRESENTATION]: Switches between Login and Signup forms inside the same page
+    function switchTab(mode) {
+      const loginForm = document.getElementById('loginForm');
+      const signupForm = document.getElementById('signupForm');
+      const loginTab = document.getElementById('loginTab');
+      const signupTab = document.getElementById('signupTab');
+      const alertBox = document.getElementById('alertBox');
+      alertBox.style.display = 'none';
+
+      if (mode === 'login') {
+        loginForm.style.display = 'block';
+        signupForm.style.display = 'none';
+        loginTab.classList.add('active');
+        signupTab.classList.remove('active');
+      } else {
+        loginForm.style.display = 'none';
+        signupForm.style.display = 'block';
+        signupTab.classList.add('active');
+        loginTab.classList.remove('active');
+      }
+    }
+
+    // Helper function to display red error or green success messages
+    function showMessage(text, isError = false) {
+      const alertBox = document.getElementById('alertBox');
+      alertBox.style.display = 'block';
+      alertBox.innerText = text;
+      alertBox.className = isError ? 'msg-box msg-error' : 'msg-box msg-success';
+    }
+
+    // 1. SIGN UP HANDLER: Sends new user details to POST /api/signup
+    async function handleSignup(event) {
+      event.preventDefault(); // Prevents page reload
+
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value.trim();
+      const role = document.getElementById('signupRole').value;
+
+      const response = await fetch('/api/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, password, role })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        showMessage(result.error || "Signup failed!", true);
+        return;
+      }
+
+      // [REMOVE BEFORE FINAL PRESENTATION]: After successful signup, switch to Login tab automatically
+      showMessage("Account created successfully! Please login.", false);
+      document.getElementById('signupForm').reset();
+      setTimeout(() => switchTab('login'), 1000);
+    }
+
+    // 2. LOGIN HANDLER: Sends email & password to POST /api/login
+    async function handleLogin(event) {
+      event.preventDefault();
+
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value.trim();
+
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        showMessage(result.error || "Invalid Email or Password!", true);
+        return;
+      }
+
+      // [REMOVE BEFORE FINAL PRESENTATION]: Store logged-in user in Browser LocalStorage and redirect to SPA
+      localStorage.setItem('loggedInUser', JSON.stringify(result.user));
+      showMessage("Login successful! Redirecting...", false);
+
+      setTimeout(() => {
+        window.location.href = '/dashboard';
+      }, 600);
+    }
+  </script>
+</body>
+</html>
